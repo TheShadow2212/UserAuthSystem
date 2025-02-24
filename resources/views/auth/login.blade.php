@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {!! NoCaptcha::renderJs('login') !!}
     <title>Iniciar Sesión</title>
     <style>
         body {
@@ -90,6 +91,10 @@
 
             <label for="password">Contraseña:</label>
             <input type="password" name="password" id="password" >
+            
+            <br>
+                {!! NoCaptcha::display(['data-callback' => 'onSubmit']) !!}
+            <br>
 
             <button type="submit">Iniciar sesión</button>
 
@@ -111,5 +116,11 @@
         </form>
         <p>¿No tienes cuenta? <a href="{{ route('register') }}" style="color: #4682b4;">Registrarse</a></p>
     </div>
-</body>
+    <script>
+        function onSubmit(event) {
+            event.preventDefault();
+            grecaptcha.execute();
+        }
+    </script>
+    </body>
 </html>

@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {!! NoCaptcha::renderJs('register') !!}
+
     <title>Registro</title>
     <style>
         body {
@@ -99,9 +101,11 @@
 
             <label for="password_confirmation">Confirmar Contraseña:</label>
             <input type="password" name="password_confirmation" id="password_confirmation" >
+            <br>
+                {!! NoCaptcha::display(['data-callback' => 'onSubmit']) !!}
+            <br>
 
             <button type="submit">Registrar</button>
-
             @if ($errors->any())
                 <div class="error-message">
                     <ul>
@@ -114,5 +118,11 @@
         </form>
         <p>¿Ya tienes una cuenta? <a href="{{ route('login') }}" style="color: #4682b4;">Iniciar sesión</a></p>
     </div>
-</body>
+    <script>
+        function onSubmit(event) {
+            event.preventDefault();
+            grecaptcha.execute();
+        }
+    </script>
+    </body>
 </html>

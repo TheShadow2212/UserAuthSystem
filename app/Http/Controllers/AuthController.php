@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Middleware\JwtAuthMiddleware;
+use Anhskohbo\NoCaptcha\Facades\NoCaptcha;
 use App\Services\JwtAuthService;
 use App\Services\AuthService;
 
@@ -115,6 +116,13 @@ class AuthController extends Controller
             return $redirect;
         }
 
+        $request->validate([
+            'g-recaptcha-response' => 'required|captcha', 
+        ], [
+            'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
+            'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
+        ]);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:50',
             'email' => 'required|string|email|unique:users,email',
@@ -149,12 +157,19 @@ class AuthController extends Controller
      * @return \Illuminate\Http\RedirectResponse
      */
     public function login(Request $request)
-    {
+    { 
         $redirect = $this->jwtAuthService->validateAndRedirect($request);
         if ($redirect) {
             return $redirect;
         }
 
+        $request->validate([
+            'g-recaptcha-response' => 'required|captcha', 
+        ], [
+            'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
+            'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
+        ]);
+        
         $credentials = $request->only('email', 'password');
         $user = User::where('email', $credentials['email'])->first();
     
@@ -177,6 +192,13 @@ class AuthController extends Controller
      */
     public function verifyCode(Request $request)
     {
+        $request->validate([
+            'g-recaptcha-response' => 'required|captcha', 
+        ], [
+            'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
+            'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
+        ]);
+
         $attempts = session('verification_attempts', 0);
 
         $validator = Validator::make($request->all(), [

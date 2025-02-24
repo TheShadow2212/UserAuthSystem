@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {!! NoCaptcha::renderJs('verify') !!}
     <title>Verificación</title>
     <style>
         body {
@@ -65,6 +66,9 @@
             @csrf
             <input type="hidden" name="email" value="{{ session('email') }}">
             <input type="text" name="code" id="code" placeholder="Ingrese el código">
+            <br>
+                {!! NoCaptcha::display(['data-callback' => 'onSubmit']) !!}
+            <br>
             <button type="submit">Verificar</button>
         </form>
         @if($errors->any())
@@ -72,6 +76,11 @@
                 <p class="error-message">{{ $errors->first() }}</p>
             </div>
         @endif
-    </div>
-</body>
+        <script>
+        function onSubmit(event) {
+            event.preventDefault();
+            grecaptcha.execute();
+        }
+    </script>
+    </body>
 </html>
