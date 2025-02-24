@@ -31,6 +31,10 @@ Route::middleware(['jwt.cookie'])->group(function () {
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
 });
 
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
 Route::fallback(function () {
      return redirect()->route('login')->withErrors(['error' => 'Ruta no encontrada.']);
 });
