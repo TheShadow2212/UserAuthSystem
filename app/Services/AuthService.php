@@ -28,6 +28,7 @@ class AuthService
 
 
         $otp = TOTP::create($user->verification_secret);
+        $otp->setPeriod(300); 
         $code = $otp->now();
 
         $subject = $isFirstVerification ? "Verificación de email e identidad." : "Verificación de identidad.";
@@ -56,8 +57,10 @@ class AuthService
         }
 
         $otp = TOTP::create($user->verification_secret);
-        
-        return $otp->verify($code); 
+        $otp->setPeriod(300); 
+        $code = $otp->now();
+
+        return $otp->verify($code, null, 1); 
     }
 
     /**

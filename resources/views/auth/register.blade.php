@@ -58,37 +58,11 @@
             margin-top: 10px;
         }
     </style>
-    <!-- <script>
-        function validateRegisterForm(event) {
-            var name = document.getElementById('name').value;
-            var email = document.getElementById('email').value;
-            var password = document.getElementById('password').value;
-            var confirmPassword = document.getElementById('password_confirmation').value;
-            var errorMessage = "";
-
-            if (name === "") {
-                errorMessage += "El nombre es obligatorio.\n";
-            }
-            if (email === "") {
-                errorMessage += "El correo electrónico es obligatorio.\n";
-            }
-            if (password === "") {
-                errorMessage += "La contraseña es obligatoria.\n";
-            }
-            if (password !== confirmPassword) {
-                errorMessage += "Las contraseñas no coinciden.\n";
-            }
-            if (errorMessage) {
-                event.preventDefault();
-                alert(errorMessage);
-            }
-        }
-    </script> -->
 </head>
 <body>
     <div class="container">
         <h1>Registrarse</h1>
-        <form action="{{ route('register') }}" method="POST" onsubmit="validateRegisterForm(event)">
+        <form action="{{ route('register') }}" method="POST">
             @csrf
             <label for="name">Nombre:</label>
             <input type="text" name="name" id="name" value="{{ old('name') }}" >

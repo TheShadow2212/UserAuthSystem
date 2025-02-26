@@ -62,29 +62,11 @@
             margin-top: 10px;
         }
     </style>
-    <!-- <script>
-        function validateLoginForm(event) {
-            var email = document.getElementById('email').value;
-            var password = document.getElementById('password').value;
-            var errorMessage = "";
-
-            if (email === "") {
-                errorMessage += "El correo electrónico es obligatorio.\n";
-            }
-            if (password === "") {
-                errorMessage += "La contraseña es obligatoria.\n";
-            }
-            if (errorMessage) {
-                event.preventDefault();
-                alert(errorMessage); 
-            }
-        }
-    </script> -->
 </head>
 <body>
     <div class="container">
         <h1>Iniciar sesión</h1>
-        <form action="{{ route('login') }}" method="POST" onsubmit="validateLoginForm(event)">
+        <form action="{{ route('login') }}" method="POST">
             @csrf
             <label for="email">Correo Electrónico:</label>
             <input type="email" name="email" id="email" value="{{ old('email') }}" >

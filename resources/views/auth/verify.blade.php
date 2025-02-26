@@ -62,7 +62,7 @@
     <div class="container">
         <h2>Verificación</h2>
         <p>Ingrese un código de verificación enviado a <strong>{{ session('email') }}</strong></p>
-        <form action="{{ route('verify') }}" method="POST" onsubmit="validateVerificationForm(event)">
+        <form action="{{ route('verify') }}" method="POST">
             @csrf
             <input type="hidden" name="email" value="{{ session('email') }}">
             <input type="text" name="code" id="code" placeholder="Ingrese el código">
