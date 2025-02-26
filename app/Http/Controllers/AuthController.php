@@ -116,17 +116,11 @@ class AuthController extends Controller
             return $redirect;
         }
 
-        $request->validate([
-            'g-recaptcha-response' => 'required|captcha', 
-        ], [
-            'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
-            'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
-        ]);
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:50',
             'email' => 'required|string|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
+            'g-recaptcha-response' => 'required|captcha', 
         ], [
             'required' => 'El campo :attribute es obligatorio.',
             'string' => 'El campo :attribute debe ser una cadena de texto.',
@@ -135,6 +129,8 @@ class AuthController extends Controller
             'unique' => 'El campo :attribute ya está en uso.',
             'min' => 'El campo :attribute debe tener al menos :min caracteres.',
             'confirmed' => 'La confirmación de la contraseña no coincide.',
+            'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
+            'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
         ]);
 
         if ($validator->fails()) {
@@ -163,6 +159,13 @@ class AuthController extends Controller
             return $redirect;
         }
 
+        $credentials = $request->only('email', 'password');
+        $user = User::where('email', $credentials['email'])->first();
+    
+        if (!$user || !auth()->attempt($credentials)) {
+            return redirect()->route('login')->withErrors(['error' => 'Credenciales invalidas.']);
+        }
+
         $request->validate([
             'g-recaptcha-response' => 'required|captcha', 
         ], [
@@ -170,12 +173,6 @@ class AuthController extends Controller
             'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
         ]);
         
-        $credentials = $request->only('email', 'password');
-        $user = User::where('email', $credentials['email'])->first();
-    
-        if (!$user || !auth()->attempt($credentials)) {
-            return redirect()->route('login')->withErrors(['error' => 'Credenciales invalidas.']);
-        }
         
         $isFirstVerification = is_null($user->email_verified_at);
         $this->authService->sendVerificationCode($user, $isFirstVerification);
@@ -192,29 +189,33 @@ class AuthController extends Controller
      */
     public function verifyCode(Request $request)
     {
-        $request->validate([
-            'g-recaptcha-response' => 'required|captcha', 
-        ], [
-            'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
-            'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
-        ]);
 
         $attempts = session('verification_attempts', 0);
 
         $validator = Validator::make($request->all(), [
+            'g-recaptcha-response' => 'required|captcha',
             'code' => 'required|digits:6'
+        ], [
+            'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
+            'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
+            'code.required' => 'El código es obligatorio.',
+            'code.digits' => 'El código ingresado debe tener exactamente 6 números.'
         ]);
 
         if ($validator->fails()) {
             session(['verification_attempts' => $attempts + 1]);
-            return redirect()->route('verify')->withErrors(['error' => 'El código ingresado excede o carece de números.'])->with('email', $request->email);
-        }        
+            return redirect()->route('verify')
+                ->withErrors($validator)
+                ->with('email', $request->email);
+        }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$this->authService->validateVerificationCode($request->email, $request->code)) {
             session(['verification_attempts' => $attempts + 1]);
-            return redirect()->route('verify')->withErrors(['error' => 'Código incorrecto. Intenta nuevamente.'])->with('email', $request->email);
+            return redirect()->route('verify')
+                ->withErrors(['error' => 'Código incorrecto. Intenta nuevamente.'])
+                ->with('email', $request->email);
         }
 
         $token = $this->authService->confirmVerification($user);

@@ -77,10 +77,10 @@
             </div>
         @endif
         <script>
-        function onSubmit(event) {
-            event.preventDefault();
-            grecaptcha.execute();
-        }
-    </script>
+            function onSubmit(event) {
+                event.preventDefault();
+                grecaptcha.execute();
+            }
+        </script>
     </body>
 </html>
