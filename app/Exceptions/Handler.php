@@ -59,9 +59,9 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
 
-        // if ($exception instanceof \Exception) {
-        //     return response()->view('errors.no-connection', [], Response::HTTP_INTERNAL_SERVER_ERROR);
-        // }
+        if ($exception instanceof \Exception) {
+            return response()->view('errors.no-connection', [], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
 
         return parent::render($request, $exception);
     }
