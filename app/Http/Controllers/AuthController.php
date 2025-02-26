@@ -159,7 +159,7 @@ class AuthController extends Controller
             return $redirect;
         }
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string',
             'g-recaptcha-response' => 'required|captcha', 
@@ -170,7 +170,10 @@ class AuthController extends Controller
             'g-recaptcha-response.required' => 'Por favor completa el reCAPTCHA.',
             'g-recaptcha-response.captcha' => 'La validación del reCAPTCHA ha fallado. Intenta nuevamente.',
         ]);
-        
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator);
+        }
 
         $credentials = $request->only('email', 'password');
         $user = User::where('email', $credentials['email'])->first();
