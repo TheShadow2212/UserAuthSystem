@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
 use App\Models\User;
 use OTPHP\TOTP;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\Mail;
 use ParagonIE\ConstantTime\Base32;
+use Resend\Laravel\Facades\Resend;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class AuthService
 {
@@ -21,24 +22,35 @@ class AuthService
     public function sendVerificationCode(User $user, bool $isFirstVerification = false)
     {
         if (!$user->verification_secret) {
-            $randomBytes = random_bytes(10); 
-            $user->verification_secret = Base32::encodeUnpadded($randomBytes); 
+            $randomBytes = random_bytes(10);
+            $user->verification_secret = Base32::encodeUnpadded($randomBytes);
             $user->save();
-        }    
-
+        }
 
         $otp = TOTP::create($user->verification_secret);
         $otp->setPeriod(300); 
         $code = $otp->now();
 
-        $subject = $isFirstVerification ? "Verificación de email e identidad." : "Verificación de identidad.";
-        $message = $isFirstVerification 
-            ? "Tu código de verificación de correo e identidad es: $code"
-            : "Tu código para verificar identidad es: $code";
+        $subject = $isFirstVerification 
+            ? "Verificación de email e identidad." 
+            : "Verificación de identidad.";
 
-        Mail::raw($message, function ($mail) use ($user, $subject) {
-            $mail->to($user->email)->subject($subject);
-        });
+        $html = $this->generateEmailTemplate($user->name, $code, $isFirstVerification);
+
+        try {
+            $response = Resend::emails()->send([
+                'from' => 'TuApp <onboarding@resend.dev>',
+                'to' => [$user->email],
+                'subject' => $subject,
+                'html' => $html,
+            ]);
+
+            if (!isset($response['id'])) {
+                Log::error('Error al enviar correo: ' . json_encode($response));
+            }
+        } catch (Exception $e) {
+            Log::error('Error de envío con Resend: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -53,14 +65,13 @@ class AuthService
         $user = User::where('email', $email)->first();
 
         if (!$user || !$user->verification_secret) {
-            return false; 
+            return false;
         }
 
         $otp = TOTP::create($user->verification_secret);
-        $otp->setPeriod(300); 
-        $code = $otp->now();
+        $otp->setPeriod(300);
 
-        return $otp->verify($code, null, 1); 
+        return $otp->verify($code, null, 1);
     }
 
     /**
@@ -79,5 +90,41 @@ class AuthService
 
         $token = JWTAuth::fromUser($user);
         return $token;
+    }
+
+    /**
+     * Generate the HTML template for the email.
+     *
+     * @param string $name
+     * @param string $code
+     * @param bool $isFirstVerification
+     * @return string
+     */
+    private function generateEmailTemplate(string $name, string $code, bool $isFirstVerification): string
+    {
+        $title = $isFirstVerification 
+            ? "Verificación de Email e Identidad" 
+            : "Verificación de Identidad";
+
+        $message = $isFirstVerification
+            ? "Gracias por registrarte. Para verificar tu correo e identidad, introduce el siguiente código:"
+            : "Por razones de seguridad, verifica tu identidad con el siguiente código:";
+
+        return "
+        <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;'>
+            <div style='background-color: #f4f4f4; padding: 20px; border-radius: 8px;'>
+                <h2 style='color: #007BFF;'>$title</h2>
+                <p>Hola, <strong>$name</strong>,</p>
+                <p>$message</p>
+                <div style='text-align: center;'>
+                    <p style='font-size: 28px; font-weight: bold; color: #28a745;'>$code</p>
+                </div>
+                <p>Este código es válido por <strong>5 minutos</strong>.</p>
+                <p>Si no solicitaste este código, por favor ignora este mensaje.</p>
+            </div>
+            <div style='text-align: center; font-size: 12px; color: #aaa; margin-top: 10px;'>
+                <p>© " . date('Y') . " TuApp. Todos los derechos reservados.</p>
+            </div>
+        </div>";
     }
 }
